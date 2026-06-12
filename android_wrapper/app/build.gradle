@@ -14,15 +14,29 @@ android {
         versionCode 1
         versionName '1.0'
 
+        ndk {
+            abiFilters += ["arm64-v8a", "x86_64"]
+        }
+
         manifestPlaceholders = [
             'appName': 'VTHC Middleware'
         ]
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("$rootDir/release.keystore")
+            storePassword "vthcpass"
+            keyAlias "vthckey"
+            keyPassword "vthcpass"
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -33,7 +47,7 @@ android {
 }
 
 chaquopy {
-    python {
+    defaultConfig {
         pip {
             install "flask"
             install "Pillow"
@@ -44,6 +58,6 @@ chaquopy {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.webkit:webkit:1.8.0'
-    implementation 'androidx.core:core-ktx:1.11.0'
+    implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'com.google.android.material:material:1.10.0'
 }

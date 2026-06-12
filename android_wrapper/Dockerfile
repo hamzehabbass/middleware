@@ -21,7 +21,9 @@ RUN wget https://dl.google.com/android/repository/commandlinetools-linux-9862592
     mv $ANDROID_SDK_ROOT/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/ 2>/dev/null || true && \
     rm /tmp/android-tools.zip
 
-RUN yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653"
+RUN yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-34" "build-tools;33.0.1" "build-tools;34.0.0" "ndk;25.2.9519653" "platform-tools"
+
+RUN yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
 
 WORKDIR /workspace
 

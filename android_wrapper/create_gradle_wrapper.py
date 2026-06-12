@@ -23,13 +23,23 @@ if not jar_path.exists():
     print('Downloading Gradle wrapper zip...')
     urllib.request.urlretrieve('https://services.gradle.org/distributions/gradle-8.1-bin.zip', zip_path)
     with zipfile.ZipFile(zip_path, 'r') as z:
-        z.extract('gradle-8.1/lib/gradle-wrapper.jar', root / 'gradle-tmp')
-    src = root / 'gradle-tmp' / 'gradle-8.1' / 'lib' / 'gradle-wrapper.jar'
-    src.replace(jar_path)
-    import shutil
-    shutil.rmtree(root / 'gradle-tmp', ignore_errors=True)
-    zip_path.unlink()
-    print('Gradle wrapper jar downloaded.')
+        candidate = None
+        for name in z.namelist():
+            if name.endswith('gradle-wrapper.jar'):
+                candidate = name
+                break
+            if name.endswith('gradle-wrapper-8.1.jar'):
+                candidate = name
+                break
+        if not candidate:
+            raise RuntimeError('Could not find gradle wrapper jar in Gradle distribution')
+        with z.open(candidate) as src, open(jar_path, 'wb') as dst:
+            dst.write(src.read())
+    try:
+        zip_path.unlink()
+    except Exception:
+        pass
+    print('Gradle wrapper jar downloaded from', candidate)
 
 print('Created Gradle wrapper at', jar_path)
 print('Files:')
