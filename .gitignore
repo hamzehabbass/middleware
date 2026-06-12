@@ -1,0 +1,26 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.pym
+.Python
+env/
+venv/
+ENV/
+*.env
+
+# Android
+*.apk
+*.aab
+*.keystore
+local.properties
+.gradle/
+build/
+app/build/
+
+# Editor
+.vscode/
+.idea/
+*.iml
+.DS_Store

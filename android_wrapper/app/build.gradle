@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+    id 'com.chaquo.python'
+}
+
+android {
+    namespace 'com.vthc.middleware'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.vthc.middleware'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+
+        manifestPlaceholders = [
+            'appName': 'VTHC Middleware'
+        ]
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+chaquopy {
+    python {
+        pip {
+            install "flask"
+            install "Pillow"
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.webkit:webkit:1.8.0'
+    implementation 'androidx.core:core-ktx:1.11.0'
+    implementation 'com.google.android.material:material:1.10.0'
+}
