@@ -17,8 +17,7 @@ app = Flask(__name__)
 app.secret_key = "VEHRAD_ODOO_ENTERPRISE_THEME_RFID_2026"
 
 # Setup basic logging to file and console for debugging Odoo exceptions
-APP_BASE_DIR = os.path.expanduser("~")
-LOG_PATH = os.path.join(APP_BASE_DIR, 'vthc_error.log')
+LOG_PATH = os.path.join(os.path.dirname(__file__), 'vthc_error.log')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s',
@@ -255,29 +254,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         .btn-block {
             width: 100%;
-        }
-
-        .btn:disabled,
-        .btn.btn-loading {
-            opacity: 0.6;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid #fff;
-            border-radius: 50%;
-            animation: spin-loader 0.8s linear infinite;
-            margin-right: 6px;
-        }
-
-        @keyframes spin-loader {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .card {
@@ -1726,14 +1702,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     {% endfor %}
                     
                     <div style="margin-top: 2rem; padding: 0.5rem; border-top: 2px solid var(--border);">
-                        <div style="margin-bottom: 0.5rem;">
-                            <button type="button" class="btn btn-secondary btn-block" onclick="location.reload()" style="height: 45px; font-weight: 600;">
-                                🔄 Refresh Page
-                            </button>
-                        </div>
                         <form action="/validate-document-complete" method="POST" onsubmit="return confirmFinalDocumentValidation(event)">
                             <input type="hidden" name="final_doc_id" value="{{ selected_doc.id }}">
-                            <button type="submit" class="btn btn-accent btn-block" style="font-size: 1.1rem; height: 50px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,160,157,0.3);">✓ Final Validate Document</button>
+                            <button type="submit" class="btn btn-accent btn-block" style="font-size: 1.1rem; height: 50px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,160,157,0.3);">Final Validate Document</button>
                         </form>
                     </div>
                 </div>
@@ -3609,16 +3580,11 @@ def validate_document_complete():
     )
 
 
-def run_flask_server(host='127.0.0.1', port=5000):
-    """Start the Flask middleware server from an Android native wrapper."""
-    preferred_port = int(os.environ.get('MIDDLEWARE_PORT', str(port)))
+if __name__ == '__main__':
+    preferred_port = int(os.environ.get('MIDDLEWARE_PORT', '5000'))
     try:
-        app.run(host=host, port=preferred_port, debug=False, threaded=True)
+        app.run(host='127.0.0.1', port=preferred_port, debug=False, threaded=True)
     except OSError:
         fallback_port = 5001 if preferred_port == 5000 else 5000
         logging.warning(f'Port {preferred_port} unavailable, starting on {fallback_port}')
-        app.run(host=host, port=fallback_port, debug=False, threaded=True)
-
-
-if __name__ == '__main__':
-    run_flask_server()
+        app.run(host='127.0.0.1', port=fallback_port, debug=False, threaded=True)
