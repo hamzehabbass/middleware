@@ -20,15 +20,32 @@ if not src.exists():
 
 with Image.open(src) as im:
     im = im.convert('RGBA')
+
+    # Build a launcher-friendly icon source from the left compact symbol area.
+    iw, ih = im.size
+    # 39.2% lands on a whitespace gap between glyph groups in LOGO-VEHRAD.png.
+    mark_crop = im.crop((0, 0, int(iw * 0.392), ih)).convert('RGBA')
     
     # Create logo centered in transparent canvas (for adaptive icon foreground)
-    def make_transparent_logo(size):
+    def make_transparent_logo(size, source):
         canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))  # Transparent background
-        iw, ih = im.size
-        # Scale logo to 72% of canvas (safe zone is 66dp, but 72% gives good visual balance)
-        scale = min(size * 0.72 / iw, size * 0.72 / ih)
-        nw, nh = max(1, int(iw * scale)), max(1, int(ih * scale))
-        resized = im.resize((nw, nh), Image.LANCZOS)
+        sw, sh = source.size
+        # Scale symbol larger so it is clearly visible on launcher icons.
+        scale = min(size * 0.84 / sw, size * 0.84 / sh)
+        nw, nh = max(1, int(sw * scale)), max(1, int(sh * scale))
+        resized = source.resize((nw, nh), Image.LANCZOS)
+        paste_x = (size - nw) // 2
+        paste_y = (size - nh) // 2
+        canvas.paste(resized, (paste_x, paste_y), resized)
+        return canvas
+
+    # Create logo centered in white canvas (for legacy launcher pngs)
+    def make_white_logo(size, source):
+        canvas = Image.new('RGBA', (size, size), (255, 255, 255, 255))
+        sw, sh = source.size
+        scale = min(size * 0.84 / sw, size * 0.84 / sh)
+        nw, nh = max(1, int(sw * scale)), max(1, int(sh * scale))
+        resized = source.resize((nw, nh), Image.LANCZOS)
         paste_x = (size - nw) // 2
         paste_y = (size - nh) // 2
         canvas.paste(resized, (paste_x, paste_y), resized)
@@ -37,7 +54,7 @@ with Image.open(src) as im:
     # Generate the adaptive launcher foreground asset in mipmap-anydpi-v26 (108 dp)
     anydpi = res_root / 'mipmap-anydpi-v26'
     anydpi.mkdir(parents=True, exist_ok=True)
-    launcher_foreground = make_transparent_logo(432)  # xxxhdpi equivalent for density scaling
+    launcher_foreground = make_transparent_logo(432, mark_crop)  # xxxhdpi equivalent for density scaling
     launcher_foreground.save(anydpi / 'ic_launcher_foreground.png', format='PNG')
     print('Wrote', anydpi / 'ic_launcher_foreground.png', (anydpi / 'ic_launcher_foreground.png').stat().st_size)
 
@@ -47,7 +64,7 @@ with Image.open(src) as im:
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / 'ic_launcher.png'
         out_round = out_dir / 'ic_launcher_round.png'
-        icon = make_transparent_logo(size)
+        icon = make_white_logo(size, mark_crop)
         icon.save(out_path, format='PNG')
         icon.save(out_round, format='PNG')
         print('Wrote', out_path, out_path.stat().st_size)

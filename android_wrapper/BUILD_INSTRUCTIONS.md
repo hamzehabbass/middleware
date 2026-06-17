@@ -2,6 +2,82 @@
 
 This project builds a native Android APK for the VTHC Middleware (Flask-based RFID inventory app).
 
+## Verified Fast Rebuild (Windows, 2026-06-17)
+
+Use this exact method for future rebuilds on this machine.
+
+### 0) Ensure local SDK path format is valid
+
+`android_wrapper/local.properties` must contain exactly:
+
+```properties
+sdk.dir=C:/Android/Sdk
+```
+
+Do not use extra escaping like `C\\:\\Android\\Sdk`.
+
+### 1) Keep Chaquopy config as below
+
+In `app/build.gradle` under `chaquopy { defaultConfig { ... } }`:
+
+```gradle
+version "3.13"
+buildPython "C:/Python313/python.exe"
+```
+
+### 2) Regenerate launcher icon assets (if logo changed)
+
+From workspace root:
+
+```powershell
+Set-Location 'C:\Users\hamza\Desktop\VTHC\MiddleWare'
+python generate_mipmaps.py
+```
+
+### 3) Run this exact PowerShell build command
+
+From PowerShell:
+
+```powershell
+$sdkRoot='C:\Android\Sdk';
+$jdk17 = Get-ChildItem 'C:\Program Files\Eclipse Adoptium' -Directory |
+   Where-Object { $_.Name -like 'jdk-17*' } |
+   Sort-Object Name -Descending |
+   Select-Object -First 1;
+
+if (-not $jdk17) { throw 'JDK 17 not found under C:\Program Files\Eclipse Adoptium' }
+
+$env:JAVA_HOME=$jdk17.FullName;
+$env:ANDROID_SDK_ROOT=$sdkRoot;
+$env:ANDROID_HOME=$sdkRoot;
+$env:Path="$($env:JAVA_HOME)\bin;$sdkRoot\cmdline-tools\latest\bin;$sdkRoot\platform-tools;$env:Path";
+
+Set-Location 'C:\Users\hamza\Desktop\VTHC\MiddleWare\android_wrapper';
+.\gradlew.bat assembleDebug
+```
+
+### 4) Confirm APK exists
+
+```powershell
+Test-Path 'C:\Users\hamza\Desktop\VTHC\MiddleWare\android_wrapper\app\build\outputs\apk\debug\app-debug.apk'
+Get-Item 'C:\Users\hamza\Desktop\VTHC\MiddleWare\android_wrapper\app\build\outputs\apk\debug\app-debug.apk' |
+   Select-Object FullName,Length,LastWriteTime
+```
+
+Expected output location:
+
+```text
+app\build\outputs\apk\debug\app-debug.apk
+```
+
+### Why this method is the reliable one here
+
+- Build was successful with this exact flow (`BUILD SUCCESSFUL in 2m 24s`).
+- Gradle 8.1 failed under Java 25 (`Unsupported class file major version 69`), and JDK 17 fixed it.
+- Android SDK resolution failed until `local.properties` used `sdk.dir=C:/Android/Sdk` format.
+- Python 3.10 installation was blocked by Windows Installer pending reboot (`MsiSystemRebootPending=1`).
+- Using Chaquopy Python 3.13 with `C:/Python313/python.exe` avoided that blocker and completed the APK build.
+
 ## Quick Start (Recommended)
 
 ### Option 1: Build Using GitHub Actions (⭐ Easiest - No Setup Required)
@@ -148,6 +224,10 @@ android_wrapper/
 
 ### "Cannot build on Windows"
 - Use GitHub Actions (Option 1) - absolutely zero setup
+
+### "Couldn't find Python 3.10" or installer exits 1603
+- This project is now set to Python 3.13 in `app/build.gradle` for local Windows rebuilds.
+- If you ever switch back to Python 3.10 and see 1603, check for pending reboot state first, then reboot and retry.
 
 ### APK too large
 - Run: `./gradlew assembleRelease` for optimized build

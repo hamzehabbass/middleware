@@ -249,6 +249,209 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             box-shadow: var(--shadow-soft);
         }
 
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(2px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 180ms ease;
+        }
+
+        .overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay-panel {
+            width: min(100%, 720px);
+            max-height: min(100%, 92vh);
+            background: #f7f9fc;
+            border-radius: 18px;
+            box-shadow: 0 24px 40px rgba(20, 30, 58, 0.22);
+            border: 1px solid #d9e0ec;
+            padding: 1rem 1.2rem 1.2rem;
+            overflow: auto;
+        }
+
+        .overlay-panel header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .overlay-panel h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #25344d;
+        }
+
+        .overlay-panel p {
+            margin: 0.35rem 0 0;
+            color: #5b6f8e;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .overlay-panel .scan-window-actions {
+            display: grid;
+            gap: 0;
+            margin-top: 0.85rem;
+            background: #ffffff;
+            border: 1px solid #d6e0ef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .overlay-panel .scan-window-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.7rem 0.75rem;
+            border-bottom: 1px solid #e5ecf7;
+            background: #ffffff;
+        }
+
+        .overlay-panel .scan-window-row:last-child {
+            border-bottom: none;
+        }
+
+        .overlay-panel .scan-window-tag {
+            color: #1f3557;
+            font-size: 0.96rem;
+            word-break: break-all;
+        }
+
+        .overlay-panel .scan-window-label {
+            color: #7a8da9;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .overlay-panel .modal-card {
+            background: #ffffff;
+            border: 1px solid #d8e3f2;
+            border-radius: 14px;
+            margin-top: 1rem;
+            padding: 0.9rem 0.95rem;
+        }
+
+        .scan-overlay-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 0.7rem;
+        }
+
+        .scan-overlay-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .scan-overlay-meta .meta-item {
+            background: #eef3fb;
+            border: 1px solid #dbe4f2;
+            border-radius: 10px;
+            padding: 0.55rem 0.65rem;
+        }
+
+        .scan-delete-btn {
+            display: inline-flex;
+        }
+
+        .scan-preview {
+            margin-top: 0.55rem;
+            border: 1px solid #d9e1ee;
+            border-radius: 10px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .scan-preview-row {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr);
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.42rem 0.55rem;
+            border-bottom: 1px solid #edf1f7;
+            font-size: 0.8rem;
+        }
+
+        .scan-preview-row:last-child {
+            border-bottom: none;
+        }
+
+        .scan-preview-tag {
+            color: #2c4262;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scan-preview-empty {
+            padding: 0.55rem;
+            color: #7b8ca8;
+            font-size: 0.78rem;
+        }
+
+        .scan-preview-more {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .custom-confirm {
+            display: grid;
+            gap: 0.95rem;
+            padding: 0.4rem;
+        }
+
+        .custom-confirm .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.6rem;
+        }
+
+        .btn-confirm,
+        .btn-cancel {
+            min-width: 110px;
+            font-weight: 700;
+        }
+
+        .btn-confirm {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-cancel {
+            background: var(--surface-alt);
+            color: var(--text);
+            border: 1px solid #cfd9e8;
+        }
+
+        .overlay-close {
+            background: #ffffff;
+            border: 1px solid #c7d4e8;
+            color: #2e476d;
+            padding: 0.45rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
         .btn-secondary:hover {
             background: #e5e7eb;
         }
@@ -1494,7 +1697,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 {% if session.get('user_email') %}
                 <div class="topbar-actions">
                     <span class="topbar-user">{{ session['user_email'] }}</span>
-                    <a href="/logout" class="btn btn-sm btn-light">Exit</a>
+                    <button type="button" class="btn btn-sm btn-light" onclick="promptLogout(event)">Exit</button>
                 </div>
                 {% endif %}
             </div>
@@ -1693,30 +1896,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                             <div class="scanner-panel">
                                 <div class="scanner-header">
                                     <div>
-                                        <div class="scanner-title">RFID Scan Line</div>
-                                    </div>
-                                    <div class="scanner-status" id="scanner_status_indicator_{{ line_key }}">
-                                        <span id="pulse_dot_{{ line_key }}" class="status-dot"></span>
-                                        <span id="status_text_{{ line_key }}" class="status-text">STANDBY</span>
+                                        <div class="scanner-title">Scanner</div>
                                     </div>
                                 </div>
-                                <button type="button" id="manual_activation_btn_{{ line_key }}" class="btn btn-secondary btn-block" onclick="activateScanListeningSession('{{ line_key }}')">Initialize Scanner</button>
+                                <button type="button" id="manual_activation_btn_{{ line_key }}" class="btn btn-secondary btn-block" onclick="activateScanListeningSession('{{ line_key }}')">Start Scan</button>
                                 
-                                <div class="scan-collapsible" id="scan_tags_collapse_{{ line_key }}">
-                                    <button type="button" class="scan-toggle-btn" id="scan_tags_toggle_btn_{{ line_key }}" onclick="toggleScanTags('{{ line_key }}')">Tags (0)</button>
-                                    <div class="scan-collapsible-body" id="scan_tags_collapse_body_{{ line_key }}">
-                                        <div class="registry-card">
-                                            <div class="registry-head">
-                                                <span>#</span>
-                                                <span>RFID Unique Code</span>
-                                                <span>Action</span>
-                                            </div>
-                                            <div id="live_tag_tbody_{{ line_key }}" class="registry-body">
-                                                <div class="empty-state">No barcodes registered yet. Launch monitoring window above.</div>
-                                            </div>
-                                        </div>
-                                        <div class="registry-footer">Count: <span id="tag_counter_{{ line_key }}">0</span></div>
-                                    </div>
+                                <div class="registry-footer" style="margin-top: 0.6rem;">Tags Read: <span id="tag_counter_{{ line_key }}">0</span></div>
+                                <div class="scan-preview" id="scan_preview_{{ line_key }}">
+                                    <div class="scan-preview-empty">No scans yet for this line.</div>
+                                </div>
+                                <div class="scan-preview-more">
+                                    <span style="font-size:0.75rem;color:#6f7f98;">Showing last 2 tags</span>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="openScanOverlay('{{ line_key }}')">Show More</button>
                                 </div>
                             </div>
                             
@@ -1726,11 +1917,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     {% endfor %}
                     
                     <div style="margin-top: 2rem; padding: 0.5rem; border-top: 2px solid var(--border);">
-                        <div style="margin-bottom: 0.5rem;">
-                            <button type="button" class="btn btn-secondary btn-block" onclick="location.reload()" style="height: 45px; font-weight: 600;">
-                                🔄 Refresh Page
-                            </button>
-                        </div>
                         <form action="/validate-document-complete" method="POST" onsubmit="return confirmFinalDocumentValidation(event)">
                             <input type="hidden" name="final_doc_id" value="{{ selected_doc.id }}">
                             <button type="submit" class="btn btn-accent btn-block" style="font-size: 1.1rem; height: 50px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,160,157,0.3);">✓ Final Validate Document</button>
@@ -1745,10 +1931,64 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     <input type="text" id="live_scanner_input" class="scanner-input" autocomplete="off" disabled>
 
+    <div id="scan_overlay" class="overlay" onclick="closeScanOverlay()">
+        <div class="overlay-panel" onclick="event.stopPropagation();">
+            <header>
+                <h2 id="scan_overlay_title">Scanner Live Window</h2>
+                <button type="button" class="overlay-close" onclick="closeScanOverlay()">Close</button>
+            </header>
+            <p>Keep this scanner window open while scanning and view the latest tags captured for the active line.</p>
+            <div class="modal-card">
+                <div class="scan-overlay-meta">
+                    <div class="meta-item"><span class="scan-window-label">BL:</span> <strong id="scan_overlay_line"></strong></div>
+                    <div class="meta-item"><span class="scan-window-label">Mode:</span> <strong id="scan_overlay_mode"></strong></div>
+                    <div class="meta-item"><span class="scan-window-label">Tags Read:</span> <strong id="scan_overlay_count">0</strong></div>
+                </div>
+                <div class="scan-overlay-toolbar">
+                    <button type="button" class="btn btn-sm btn-cancel" onclick="clearActiveOverlayTags()">Clear All</button>
+                </div>
+                <div class="scan-window-actions" id="scan_overlay_tags">
+                    <div class="empty-state">No scans yet. Start scanning to see tags here.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logout_confirm_overlay" class="overlay" onclick="closeLogoutConfirmOverlay()">
+        <div class="overlay-panel custom-confirm" onclick="event.stopPropagation();">
+            <header>
+                <h2>Confirm Logout</h2>
+                <button type="button" class="overlay-close" onclick="closeLogoutConfirmOverlay()">Close</button>
+            </header>
+            <p>Are you sure you want to exit? Your session will remain active unless you explicitly confirm logout.</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeLogoutConfirmOverlay()">Cancel</button>
+                <button type="button" class="btn btn-confirm" onclick="confirmLogout()">Yes, Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="my_confirm_overlay" class="overlay" onclick="closeMyConfirm(false)">
+        <div class="overlay-panel custom-confirm" onclick="event.stopPropagation();">
+            <header>
+                <h2 id="my_confirm_title">Confirm</h2>
+                <button type="button" class="overlay-close" onclick="closeMyConfirm(false)">Close</button>
+            </header>
+            <p id="my_confirm_message">Are you sure?</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeMyConfirm(false)">No</button>
+                <button type="button" class="btn btn-confirm" onclick="closeMyConfirm(true)">Yes</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const accumulatedTags = {}; // Scoped accurately by product_id keys
         let isListening = false;
         let activeProductId = null;
+        let confirmResolver = null;
+        const currentDocId = "{{ selected_doc.id if selected_doc else '' }}";
+        const currentMode = "{{ current_mode if current_mode else '' }}";
         const linePagerState = {
             total: 0,
             activeIndex: 0
@@ -1757,6 +1997,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         // Multi-lot tracker arrays to capture structural options under requirement 2
         const productLotAllocations = {};
         const productAvailableLotsPool = {};
+
+        function getTagStorageKey() {
+            if (!currentDocId || !currentMode) return '';
+            return `vthc_tags:${currentMode}:${currentDocId}`;
+        }
+
+        function saveTagsToStorage() {
+            const key = getTagStorageKey();
+            if (!key) return;
+            try {
+                localStorage.setItem(key, JSON.stringify(accumulatedTags));
+            } catch (_) {
+                // Ignore localStorage failures silently.
+            }
+        }
+
+        function loadTagsFromStorage() {
+            const key = getTagStorageKey();
+            if (!key) return;
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return;
+                Object.keys(accumulatedTags).forEach((k) => delete accumulatedTags[k]);
+                Object.entries(parsed).forEach(([k, tags]) => {
+                    if (Array.isArray(tags)) {
+                        accumulatedTags[k] = tags.filter((t) => typeof t === 'string' && t.trim() !== '');
+                    }
+                });
+            } catch (_) {
+                // Ignore invalid persisted payloads.
+            }
+        }
+
+        function clearLineFromStorage(pId) {
+            if (accumulatedTags[pId]) {
+                delete accumulatedTags[pId];
+            }
+            saveTagsToStorage();
+        }
+
+        function clearTagStorage() {
+            const key = getTagStorageKey();
+            if (!key) return;
+            try {
+                localStorage.removeItem(key);
+            } catch (_) {
+                // Ignore localStorage failures silently.
+            }
+            Object.keys(accumulatedTags).forEach((k) => delete accumulatedTags[k]);
+        }
 
         function positionDropdownPanel(container, optionsDiv) {
             if (!container || !optionsDiv) return;
@@ -2175,10 +2467,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function activateScanListeningSession(pId) {
             resetListeningState();
+            openScanOverlay(pId);
             const currentScroll = window.scrollY;
             const targetLot = getActiveLotTarget(pId);
             if (!targetLot) {
                 myAlert('Action Blocked: Please configure global parameters or allocate a target warehouse lot row first.');
+                closeScanOverlay();
                 return;
             }
             
@@ -2200,16 +2494,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 try {
                     scanInput.focus({preventScroll: true});
                 } catch (e) {
-                    // Older browsers may not support preventScroll
                     scanInput.focus();
-                    // attempt to restore scroll position
                     try { window.scrollTo(0, currentScroll); } catch (__) {}
                 }
             }
             if (activationBtn) {
                 activationBtn.style.background = 'var(--danger)';
                 activationBtn.style.color = 'white';
-                activationBtn.innerText = 'Listening - Scan Now';
+                activationBtn.innerText = 'Scanning';
             }
             if (indicator) {
                 indicator.style.background = '#e6f6f6';
@@ -2221,9 +2513,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             if (statusText) {
                 statusText.innerText = 'RUNNING';
             }
+            updateScanOverlay(pId);
             setTimeout(() => {
-        window.scrollTo(0, currentScroll);
-    }, 50);
+                window.scrollTo(0, currentScroll);
+            }, 50);
         }
 
         function resetListeningState() {
@@ -2244,7 +2537,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 if (activationBtn) {
                     activationBtn.style.background = 'var(--surface-alt)';
                     activationBtn.style.color = 'var(--text)';
-                    activationBtn.innerText = 'Initialize Scanner';
+                    activationBtn.innerText = 'Start Scan';
                 }
                 if (indicator) {
                     indicator.style.background = '#fff';
@@ -2310,28 +2603,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function renderTableGrid(pId) {
             const tbody = document.getElementById(`live_tag_tbody_${pId}`);
-            if (!tbody) return;
             
             const tags = accumulatedTags[pId] || [];
-            if (tags.length === 0) {
-                tbody.innerHTML = '<div class="empty-state">No barcodes registered yet. Launch monitoring window above.</div>';
-                document.getElementById(`tag_counter_${pId}`).innerText = '0';
-                updateScanToggleLabel(pId);
-                updateLotSummaryToggleLabel(pId);
-                return;
+            const countEl = document.getElementById(`tag_counter_${pId}`);
+            if (countEl) countEl.innerText = tags.length.toString();
+            renderRecentTagsPreview(pId);
+
+            if (tbody) {
+                if (tags.length === 0) {
+                    tbody.innerHTML = '<div class="empty-state">No barcodes registered yet. Launch monitoring window above.</div>';
+                } else {
+                    tbody.innerHTML = '';
+                    tags.forEach((tag, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'registry-row';
+                        row.innerHTML = `
+                            <span class="text-muted small">${index + 1}</span>
+                            <span class="tag-string">${tag}</span>
+                            <button type="button" class="btn-row-remove" onclick="deleteRegistryRow('${pId}', ${index})">Del</button>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
             }
-            tbody.innerHTML = '';
-            tags.forEach((tag, index) => {
-                const row = document.createElement('div');
-                row.className = 'registry-row';
-                row.innerHTML = `
-                    <span class="text-muted small">${index + 1}</span>
-                    <span class="tag-string">${tag}</span>
-                    <button type="button" class="btn-row-remove" onclick="deleteRegistryRow('${pId}', ${index})">Del</button>
-                `;
-                tbody.appendChild(row);
-            });
-            document.getElementById(`tag_counter_${pId}`).innerText = tags.length.toString();
+
+            updateScanOverlay(pId);
             updateScanToggleLabel(pId);
             updateLotSummaryToggleLabel(pId);
         }
@@ -2366,9 +2662,165 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         setTimeout(() => toast.remove(), 300);
     }, 2500);
 }
+
+        function myConfirm(message, title = 'Confirm') {
+            const overlay = document.getElementById('my_confirm_overlay');
+            const titleEl = document.getElementById('my_confirm_title');
+            const msgEl = document.getElementById('my_confirm_message');
+            if (!overlay || !titleEl || !msgEl) {
+                return Promise.resolve(false);
+            }
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            overlay.classList.add('open');
+            return new Promise((resolve) => {
+                confirmResolver = resolve;
+            });
+        }
+
+        function closeMyConfirm(result) {
+            const overlay = document.getElementById('my_confirm_overlay');
+            if (overlay) {
+                overlay.classList.remove('open');
+            }
+            if (confirmResolver) {
+                const resolver = confirmResolver;
+                confirmResolver = null;
+                resolver(!!result);
+            }
+        }
+
+        function openScanOverlay(pId) {
+            const overlay = document.getElementById('scan_overlay');
+            if (!overlay) return;
+            overlay.classList.add('open');
+            activeProductId = pId;
+            updateScanOverlay(pId);
+        }
+
+        function closeScanOverlay() {
+            const overlay = document.getElementById('scan_overlay');
+            if (!overlay) return;
+            overlay.classList.remove('open');
+        }
+
+        async function clearActiveOverlayTags() {
+            if (!activeProductId) return;
+            const confirmed = await myConfirm('Clear all scanned tags for this BL?', 'Confirm Clear');
+            if (!confirmed) return;
+            accumulatedTags[activeProductId] = [];
+            saveTagsToStorage();
+            renderTableGrid(activeProductId);
+            renderLotScanSummary(activeProductId);
+            updateScanOverlay(activeProductId);
+        }
+
+        function promptLogout(event) {
+            event.preventDefault();
+            const overlay = document.getElementById('logout_confirm_overlay');
+            if (!overlay) return;
+            overlay.classList.add('open');
+        }
+
+        function closeLogoutConfirmOverlay() {
+            const overlay = document.getElementById('logout_confirm_overlay');
+            if (!overlay) return;
+            overlay.classList.remove('open');
+        }
+
+        function confirmLogout() {
+            window.location.href = '/logout';
+        }
+
+        function updateScanOverlay(pId) {
+            const overlay = document.getElementById('scan_overlay');
+            if (!overlay || !overlay.classList.contains('open')) return;
+            const lineTitle = document.querySelector(`.variant-box[data-line-key="${pId}"]`)?.dataset.lineTitle || 'Current Item';
+            const title = document.getElementById('scan_overlay_title');
+            const line = document.getElementById('scan_overlay_line');
+            const mode = document.getElementById('scan_overlay_mode');
+            const count = document.getElementById('scan_overlay_count');
+            const tagsList = document.getElementById('scan_overlay_tags');
+            const tags = accumulatedTags[pId] || [];
+            if (title) title.innerText = `Scanner Live Window`;
+            if (line) line.innerText = lineTitle;
+            if (mode) mode.innerText = document.getElementById('global_lot_name') ? 'IN' : 'OUT';
+            if (count) count.innerText = tags.length.toString();
+            if (!tagsList) return;
+            if (tags.length === 0) {
+                tagsList.innerHTML = '<div class="empty-state">No scans yet. Scan a tag to see results.</div>';
+                return;
+            }
+            tagsList.innerHTML = tags.map((tag, index) => `
+                <div class="scan-window-row">
+                    <div>
+                        <div class="scan-window-label">#${index + 1}</div>
+                        <div class="scan-window-tag">${tag}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-cancel scan-delete-btn" onclick="deleteRegistryRow('${pId}', ${index})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function renderRecentTagsPreview(pId) {
+            const preview = document.getElementById(`scan_preview_${pId}`);
+            if (!preview) return;
+            const tags = accumulatedTags[pId] || [];
+            if (!tags.length) {
+                preview.innerHTML = '<div class="scan-preview-empty">No scans yet for this line.</div>';
+                return;
+            }
+            const recent = tags.slice(-2).reverse();
+            let html = recent.map((tag, i) => `
+                <div class="scan-preview-row">
+                    <span class="scan-window-label">${tags.length - i}</span>
+                    <span class="scan-preview-tag">${tag}</span>
+                </div>
+            `).join('');
+            if (tags.length > 2) {
+                html += `<div class="scan-preview-empty">+${tags.length - 2} more tags</div>`;
+            }
+            preview.innerHTML = html;
+        }
+
+        function resetListeningState() {
+            isListening = false;
+            const scanInput = document.getElementById('live_scanner_input');
+            if (scanInput) {
+                scanInput.value = '';
+                scanInput.disabled = true;
+            }
+
+            if (activeProductId) {
+                const pId = activeProductId;
+                const activationBtn = document.getElementById(`manual_activation_btn_${pId}`);
+                const indicator = document.getElementById(`scanner_status_indicator_${pId}`);
+                const pulseDot = document.getElementById(`pulse_dot_${pId}`);
+                const statusText = document.getElementById(`status_text_${pId}`);
+                
+                if (activationBtn) {
+                    activationBtn.style.background = 'var(--surface-alt)';
+                    activationBtn.style.color = 'var(--text)';
+                    activationBtn.innerText = 'Start Scan';
+                }
+                if (indicator) {
+                    indicator.style.background = '#fff';
+                    indicator.style.borderColor = 'var(--border)';
+                }
+                if (pulseDot) {
+                    pulseDot.classList.remove('dot-green');
+                }
+                if (statusText) {
+                    statusText.innerText = 'STANDBY';
+                }
+            }
+            activeProductId = null;
+            closeScanOverlay();
+        }
         function deleteRegistryRow(pId, index) {
             if (accumulatedTags[pId]) {
                 accumulatedTags[pId].splice(index, 1);
+                saveTagsToStorage();
             }
             renderTableGrid(pId);
             renderLotScanSummary(pId);
@@ -2718,10 +3170,9 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
     const scannedQty = tags.length;
     
     // 2. Ask for confirmation
-    const confirmed = confirm(
-        `📋 SAVE INTERMEDIATE LINE DRAFT\n\n` +
-        `✓ Scanned Target: ${scannedQty} items configured.\n\n` +
-        `Click OK to store this item's structural parameters as local draft.`
+    const confirmed = await myConfirm(
+        `Scanned Target: ${scannedQty} items configured.\n\nStore this item's structural parameters as local draft?`,
+        'Save Intermediate Line Draft'
     );
 
     if (confirmed) {
@@ -2750,6 +3201,7 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
 
                 if (payload && payload.success) {
                     // 4. Success: Hide the line and update Validate button
+                    clearLineFromStorage(pId);
                     markLineAsDone(pId);
                     console.log(`Line ${pId} saved successfully.`);
                 } else {
@@ -2769,16 +3221,16 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
 
         // REQUIREMENT 3: Master explicit document confirmation configuration engine
         function confirmFinalDocumentValidation(event) {
-            const confirmed = confirm(
-                "⚠️ EXPLICIT COMPLETE TRANSFER DISPATCH\\n\\n" +
-                "Are you sure you want to perform final execution validation parameters on this open sheet document?\\n\\n" +
-                "This action commits total operations rows permanently and pushes stock into inventory accounts."
-            );
-            if (!confirmed) {
-                event.preventDefault();
-                return false;
-            }
-            return true;
+            event.preventDefault();
+            myConfirm(
+                'Are you sure you want to run final validation for this document? This action commits all operations permanently.',
+                'Final Validate Document'
+            ).then((confirmed) => {
+                if (!confirmed) return;
+                clearTagStorage();
+                event.target.submit();
+            });
+            return false;
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -2787,6 +3239,7 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
             closeAllCustomSelects();
             window.addEventListener('resize', repositionOpenDropdowns);
             window.addEventListener('scroll', repositionOpenDropdowns, true);
+            loadTagsFromStorage();
 
             if (document.getElementById('global_lot_name')) {
                 syncGlobalLotToInputs();
@@ -2801,7 +3254,19 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
 
             document.querySelectorAll('[id^="live_tag_tbody_"]').forEach((el) => {
                 const pId = el.id.replace('live_tag_tbody_', '');
+                renderTableGrid(pId);
+                renderLotScanSummary(pId);
                 updateScanToggleLabel(pId);
+            });
+
+            document.querySelectorAll('.variant-box[data-line-key]').forEach((box) => {
+                const pId = box.dataset.lineKey;
+                renderTableGrid(pId);
+                renderLotScanSummary(pId);
+            });
+
+            window.addEventListener('offline', () => {
+                myAlert('Offline mode detected. Session and scanned tags are kept locally until reconnect and validate.');
             });
 
             initializeLinePager();
@@ -2868,11 +3333,13 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
                     }
 
                     accumulatedTags[pId].push(rawTag);
+                    saveTagsToStorage();
                     renderTableGrid(pId);
                     renderLotScanSummary(pId);
                     scanInput.focus({preventScroll: true});
                 } else if (parsedPrefix === targetLotToken) {
                     accumulatedTags[pId].push(rawTag);
+                    saveTagsToStorage();
                     renderTableGrid(pId);
                     scanInput.focus({preventScroll: true});
                 }
@@ -3316,7 +3783,7 @@ def dashboard():
         session['odoo_url'], session['db_name'], session['user_email'], session['api_key']
     )
     if not uid:
-        return redirect(url_for('logout'))
+        return render_dashboard_with_message('Connection error: unable to reach Odoo. Session preserved.')
 
     locations = get_internal_locations(models, uid, session['api_key'], session['db_name'])
     partners = get_partners(models, uid, session['api_key'], session['db_name'])
@@ -3333,6 +3800,21 @@ def dashboard():
         selected_owner_id=None,
         message=None,
         msg_type=None
+    )
+
+
+def render_dashboard_with_message(message, msg_type='danger'):
+    return render_template_string(
+        HTML_TEMPLATE,
+        documents=[],
+        current_mode=session.get('mode', 'purchase'),
+        locations=[],
+        partners=[],
+        selected_doc=None,
+        products=[],
+        selected_owner_id=None,
+        message=message,
+        msg_type=msg_type
     )
 
 
@@ -3404,7 +3886,7 @@ def select_doc():
         session['odoo_url'], session['db_name'], session['user_email'], session['api_key']
     )
     if not uid:
-        return redirect(url_for('logout'))
+        return render_dashboard_with_message('Connection error: unable to reach Odoo. Session preserved.')
 
     documents = get_filtered_documents(models, uid, session['api_key'], session['db_name'], session['mode'])
     selected_doc = next((d for d in documents if d['id'] == int(doc_id)), None)
@@ -3479,7 +3961,12 @@ def submit_sync():
         session['odoo_url'], session['db_name'], session['user_email'], session['api_key']
     )
     if not uid:
-        return redirect(url_for('logout'))
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'message': 'Connection lost. Please retry. User remains logged in.'
+            })
+        return render_dashboard_with_message('Connection error: unable to reach Odoo. Session preserved.')
 
     if session['mode'] == 'purchase':
         new_lot_name = request.form.get('lot_name', '').strip()
@@ -3573,7 +4060,7 @@ def validate_document_complete():
         session['odoo_url'], session['db_name'], session['user_email'], session['api_key']
     )
     if not uid:
-        return redirect(url_for('logout'))
+        return render_dashboard_with_message('Connection error: unable to reach Odoo. Session preserved.')
         
     try:
         picking_domain = [['state', 'not in', ['done', 'cancel']]]
