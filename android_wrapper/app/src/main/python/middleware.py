@@ -64,7 +64,7 @@ def invalidate_runtime_cache():
 # HTML TEMPLATE - Modern Odoo Design
 # =====================================================================
 
-HTML_TEMPLATE = """<!DOCTYPE html>
+HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -450,6 +450,77 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             padding: 0.45rem 0.8rem;
             border-radius: 8px;
             cursor: pointer;
+        }
+
+        .stocktake-card {
+            margin-top: 1rem;
+            border: 1px solid #d8e1ef;
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.95rem;
+        }
+
+        .stocktake-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-top: 0.75rem;
+        }
+
+        .stocktake-list {
+            border: 1px solid #dbe4f1;
+            border-radius: 10px;
+            min-height: 140px;
+            max-height: 220px;
+            overflow: auto;
+            background: #f9fbff;
+            padding: 0.45rem;
+        }
+
+        .stocktake-item {
+            font-size: 0.82rem;
+            padding: 0.3rem 0.45rem;
+            border-bottom: 1px solid #e9eef6;
+            color: #2d3f5f;
+            word-break: break-all;
+        }
+
+        .stocktake-item:last-child {
+            border-bottom: none;
+        }
+
+        .stocktake-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+        }
+
+        .stocktake-stat {
+            border: 1px solid #dbe4f2;
+            border-radius: 10px;
+            background: #f2f6fd;
+            padding: 0.55rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .stocktake-stat strong {
+            display: block;
+            color: #1f3658;
+            font-size: 1.05rem;
+            margin-top: 0.2rem;
+        }
+
+        .stocktake-actions {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            margin-top: 0.7rem;
+        }
+
+        .stocktake-input {
+            margin-top: 0.7rem;
         }
 
         .btn-secondary:hover {
@@ -1476,6 +1547,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 align-self: flex-start;
                 margin-top: 0.2rem;
             }
+
+            .stocktake-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stocktake-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         .lot-scan-summary {
@@ -1745,7 +1824,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <nav class="mode-tabs">
                     <a class="mode-tab {% if current_mode == 'purchase' %}active{% endif %}" href="/switch-mode/purchase">Receipts (IN)</a>
                     <a class="mode-tab {% if current_mode == 'delivery' %}active{% endif %}" href="/switch-mode/delivery">Deliveries (OUT)</a>
+                    <a class="mode-tab {% if current_mode == 'stocktaking' %}active{% endif %}" href="/switch-mode/stocktaking">Stock Taking</a>
                 </nav>
+                {% if current_mode != 'stocktaking' %}
                 <form action="/select-doc" method="POST" class="form-grid select-panel" id="global_doc_form">
                     <label class="form-label">
                         Source Operation Document
@@ -1802,6 +1883,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     </div>
                     {% endif %}
                 </form>
+                {% endif %}
+
+                {% if current_mode == 'stocktaking' %}
+                <div class="stocktake-card">
+                    <h3 class="line-sheet-head">Stock Taking Workspace</h3>
+                    <p class="line-sheet-note">Set BL filter and target qty, then scan tags. Only tags matching the BL filter are accepted.</p>
+
+                    <div class="form-row form-row-three" style="margin-top:0.45rem;">
+                        <label class="form-label">
+                            BL Filter
+                            <input type="text" id="stock_bl_prefix" placeholder="Type BL prefix (example: BL001)">
+                        </label>
+                        <label class="form-label">
+                            Target Qty
+                            <input type="number" id="stock_target_qty" min="0" step="1" value="0" placeholder="0 = no limit">
+                        </label>
+                    </div>
+
+                    <div class="stocktake-actions">
+                        <button type="button" class="btn btn-cancel" onclick="clearStockTakingSession()">Clear Session</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportStockTaking('csv')">Export CSV</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportStockTaking('excel')">Export Excel</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportStockTaking('doc')">Export DOC</button>
+                        <button type="button" class="btn btn-secondary" onclick="exportStockTaking('pdf')">Export PDF</button>
+                    </div>
+
+                    <label class="form-label stocktake-input">
+                        Scan Input
+                        <input type="text" id="stock_scan_input" autocomplete="off" placeholder="Scan tag and press Enter">
+                    </label>
+
+                    <div class="stocktake-stats">
+                        <div class="stocktake-stat">BL Filter<strong id="stock_bl_label">-</strong></div>
+                        <div class="stocktake-stat">Target Qty<strong id="stock_target_count">0</strong></div>
+                        <div class="stocktake-stat">Scanned Accepted<strong id="stock_matched_count">0</strong></div>
+                        <div class="stocktake-stat">Remaining<strong id="stock_remaining_count">0</strong></div>
+                    </div>
+
+                    <div style="margin-top:0.75rem;">
+                        <div class="scan-window-label" style="margin:0.45rem 0;">Matched Tags</div>
+                        <div id="stock_extra_list" class="stocktake-list"></div>
+                    </div>
+                </div>
+                {% endif %}
                 
                 {% if selected_doc and not products %}
                 <div class="alert-box alert-success" style="margin-top: 1rem;">
@@ -1987,6 +2112,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         let isListening = false;
         let activeProductId = null;
         let confirmResolver = null;
+        let stockMatchedOrder = [];
+        let stockMatchedSet = new Set();
         const currentDocId = "{{ selected_doc.id if selected_doc else '' }}";
         const currentMode = "{{ current_mode if current_mode else '' }}";
         const linePagerState = {
@@ -2243,6 +2370,180 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     allItems.forEach(item => item.style.display = '');
                 }
             });
+        }
+
+        function renderStockTakeList(elementId, items) {
+            const host = document.getElementById(elementId);
+            if (!host) return;
+            if (!items.length) {
+                host.innerHTML = '<div class="stocktake-item" style="color:#7788a4;">No items</div>';
+                return;
+            }
+            host.innerHTML = items.map((tag) => `<div class="stocktake-item">${tag}</div>`).join('');
+        }
+
+        function renderStockTakingSummary() {
+            const blFilter = (document.getElementById('stock_bl_prefix')?.value || '').trim();
+            const targetQty = parseInt(document.getElementById('stock_target_qty')?.value || '0', 10) || 0;
+            const matched = [...stockMatchedOrder];
+            const remaining = targetQty > 0 ? Math.max(0, targetQty - matched.length) : 0;
+
+            const blEl = document.getElementById('stock_bl_label');
+            const targetEl = document.getElementById('stock_target_count');
+            const matchedEl = document.getElementById('stock_matched_count');
+            const remainEl = document.getElementById('stock_remaining_count');
+            if (blEl) blEl.innerText = blFilter || '-';
+            if (targetEl) targetEl.innerText = String(targetQty);
+            if (matchedEl) matchedEl.innerText = String(matched.length);
+            if (remainEl) remainEl.innerText = String(remaining);
+
+            renderStockTakeList('stock_extra_list', matched);
+        }
+
+        function clearStockTakingSession() {
+            stockMatchedOrder = [];
+            stockMatchedSet = new Set();
+            const scanInput = document.getElementById('stock_scan_input');
+            if (scanInput) scanInput.value = '';
+            renderStockTakingSummary();
+        }
+
+        function getStockTakingReportData() {
+            const matched = [...stockMatchedOrder];
+            const blFilter = (document.getElementById('stock_bl_prefix')?.value || '').trim();
+            const targetQty = parseInt(document.getElementById('stock_target_qty')?.value || '0', 10) || 0;
+
+            return {
+                matched,
+                blFilter,
+                targetQty,
+                scannedAccepted: matched.length,
+                generatedAt: new Date().toISOString()
+            };
+        }
+
+        function downloadBlob(fileName, mimeType, content) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeCsvCell(value) {
+            const s = String(value ?? '');
+            if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+            return s;
+        }
+
+        function buildPdfFromLines(lines) {
+            const normalized = lines.slice(0, 48).map((line) => {
+                const text = String(line);
+                return text
+                    .split('\\').join('\\\\')
+                    .split('(').join('\\(')
+                    .split(')').join('\\)');
+            });
+            if (lines.length > 48) normalized.push('... more lines omitted ...');
+
+            const contentLines = normalized.map((line, idx) => {
+                if (idx === 0) return `(${line}) Tj`;
+                return `0 -14 Td (${line}) Tj`;
+            }).join('\n');
+
+            const stream = `BT\n/F1 10 Tf\n40 800 Td\n${contentLines}\nET`;
+            const objects = [
+                '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+                '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+                '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n',
+                '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+                `5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`
+            ];
+
+            let pdf = '%PDF-1.4\n';
+            const offsets = [0];
+            objects.forEach((obj) => {
+                offsets.push(pdf.length);
+                pdf += obj;
+            });
+            const xrefStart = pdf.length;
+            pdf += `xref\n0 ${objects.length + 1}\n`;
+            pdf += '0000000000 65535 f \n';
+            for (let i = 1; i <= objects.length; i += 1) {
+                pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+            }
+            pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+            return pdf;
+        }
+
+        function exportStockTaking(format) {
+            if (!stockMatchedOrder.length) {
+                myAlert('No matched scan results to export.');
+                return;
+            }
+            const data = getStockTakingReportData();
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+            if (format === 'csv') {
+                const lines = [
+                    'Result,Tag',
+                    ...data.matched.map((tag) => `Matched,${escapeCsvCell(tag)}`),
+                    '',
+                    `BL Filter,${escapeCsvCell(data.blFilter)}`,
+                    `Target Qty,${data.targetQty}`,
+                    `Scanned Accepted,${data.scannedAccepted}`,
+                    `Generated At,${escapeCsvCell(data.generatedAt)}`
+                ];
+                downloadBlob(`stock-taking-${stamp}.csv`, 'text/csv;charset=utf-8;', lines.join('\n'));
+                return;
+            }
+
+            if (format === 'excel') {
+                const rows = [
+                    ['Result', 'Tag'],
+                    ...data.matched.map((tag) => ['Matched', tag]),
+                    [],
+                    ['BL Filter', data.blFilter],
+                    ['Target Qty', String(data.targetQty)],
+                    ['Scanned Accepted', String(data.scannedAccepted)],
+                    ['Generated At', data.generatedAt]
+                ];
+                const tsv = rows.map((r) => r.map((c) => String(c ?? '').replace(/\t/g, ' ')).join('\t')).join('\n');
+                downloadBlob(`stock-taking-${stamp}.xls`, 'application/vnd.ms-excel', tsv);
+                return;
+            }
+
+            if (format === 'doc') {
+                const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Taking Report</title></head><body>
+                    <h2>Stock Taking Report</h2>
+                    <p><b>BL Filter:</b> ${data.blFilter || '-'}</p>
+                    <p><b>Target Qty:</b> ${data.targetQty}</p>
+                    <p><b>Scanned Accepted:</b> ${data.scannedAccepted}</p>
+                    <p><b>Generated At:</b> ${data.generatedAt}</p>
+                    <h3>Matched</h3><ul>${data.matched.map((x) => `<li>${x}</li>`).join('')}</ul>
+                </body></html>`;
+                downloadBlob(`stock-taking-${stamp}.doc`, 'application/msword', html);
+                return;
+            }
+
+            if (format === 'pdf') {
+                const lines = [
+                    'Stock Taking Report',
+                    `BL Filter: ${data.blFilter || '-'}`,
+                    `Target Qty: ${data.targetQty}`,
+                    `Scanned Accepted: ${data.scannedAccepted}`,
+                    `Generated At: ${data.generatedAt}`,
+                    '',
+                    'Matched:',
+                    ...data.matched
+                ];
+                const pdf = buildPdfFromLines(lines);
+                downloadBlob(`stock-taking-${stamp}.pdf`, 'application/pdf', pdf);
+            }
         }
 
         function updateDocumentDisplay(select) {
@@ -3042,9 +3343,14 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
             return rawTag.trim();
         }
 
+        function normalizeLotToken(value) {
+            return String(value || '').trim().toUpperCase();
+        }
+
         function getTagsForLot(pId, lotName) {
             const tags = accumulatedTags[pId] || [];
-            return tags.filter(tag => getTagPrefix(tag) === lotName);
+            const target = normalizeLotToken(lotName);
+            return tags.filter((tag) => normalizeLotToken(getTagPrefix(tag)) === target);
         }
 
         function renderLotScanSummary(pId) {
@@ -3290,16 +3596,22 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
             scanInput.addEventListener('keyup', (event) => {
                 if (event.key !== 'Enter') return;
                 event.preventDefault();
+
+                if (!isListening || !activeProductId) {
+                    return;
+                }
+
+                const pId = activeProductId;
                 
                 const rawTag = scanInput.value.trim();
                 scanInput.value = '';
-                
-                if (!isListening || !activeProductId || rawTag.length === 0) return;
-                
-                const pId = activeProductId;
+                if (!rawTag) {
+                    scanInput.focus({preventScroll: true});
+                    return;
+                }
                 if (!accumulatedTags[pId]) accumulatedTags[pId] = [];
                 
-                const demandQty = parseInt(document.getElementById(`display_demand_${pId}`).innerText, 10);
+                const demandQty = parseInt(document.getElementById(`display_demand_${pId}`)?.innerText || '0', 10);
                 
                 if (accumulatedTags[pId].length >= demandQty) {
                     myAlert(`⚠️ Limit reached! Total required target volume metrics accomplished (${demandQty} units).`);
@@ -3309,6 +3621,7 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
 
                 const targetLotToken = getActiveLotTarget(pId);
                 const parsedPrefix = getTagPrefix(rawTag);
+                const normalizedParsedPrefix = normalizeLotToken(parsedPrefix);
                 
                 if (accumulatedTags[pId].includes(rawTag)) {
                     // ignore duplicates but keep focus
@@ -3318,7 +3631,7 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
                 
                 if (targetLotToken === "__MULTI_LOT_MODE__") {
                     const assignedLots = productLotAllocations[pId] || [];
-                    const matchedLot = assignedLots.find(a => a.lot_name === parsedPrefix);
+                    const matchedLot = assignedLots.find((a) => normalizeLotToken(a.lot_name) === normalizedParsedPrefix);
                     if (!matchedLot) {
                         myAlert(`❌ This scan belongs to lot ${parsedPrefix}, which is not allocated for this line.`);
                         scanInput.focus({preventScroll: true});
@@ -3337,10 +3650,13 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
                     renderTableGrid(pId);
                     renderLotScanSummary(pId);
                     scanInput.focus({preventScroll: true});
-                } else if (parsedPrefix === targetLotToken) {
+                } else if (normalizedParsedPrefix === normalizeLotToken(targetLotToken)) {
                     accumulatedTags[pId].push(rawTag);
                     saveTagsToStorage();
                     renderTableGrid(pId);
+                    scanInput.focus({preventScroll: true});
+                } else {
+                    myAlert(`❌ Scanned lot ${parsedPrefix} does not match target lot ${targetLotToken}.`);
                     scanInput.focus({preventScroll: true});
                 }
             });
@@ -3349,6 +3665,51 @@ document.addEventListener('DOMContentLoaded', checkAllLinesSaved);
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('/sw.js').catch(() => {});
                 });
+            }
+
+            const stockScanInput = document.getElementById('stock_scan_input');
+            if (stockScanInput) {
+                renderStockTakingSummary();
+                stockScanInput.addEventListener('keyup', (event) => {
+                    if (event.key !== 'Enter') return;
+                    event.preventDefault();
+                    const rawTag = stockScanInput.value.trim();
+                    stockScanInput.value = '';
+                    if (!rawTag) return;
+
+                    const blFilter = (document.getElementById('stock_bl_prefix')?.value || '').trim();
+                    if (!blFilter) {
+                        myAlert('Enter BL filter first.');
+                        return;
+                    }
+                    const tagPrefix = getTagPrefix(rawTag);
+                    if (tagPrefix !== blFilter) {
+                        myAlert(`Rejected: tag BL ${tagPrefix} does not match required BL ${blFilter}.`);
+                        return;
+                    }
+
+                    const targetQty = parseInt(document.getElementById('stock_target_qty')?.value || '0', 10) || 0;
+                    if (targetQty > 0 && stockMatchedSet.size >= targetQty) {
+                        myAlert(`Target quantity reached (${targetQty}).`);
+                        return;
+                    }
+
+                    if (stockMatchedSet.has(rawTag)) {
+                        myAlert('This tag is already scanned.');
+                        stockScanInput.focus();
+                        return;
+                    }
+
+                    stockMatchedSet.add(rawTag);
+                    stockMatchedOrder.push(rawTag);
+                    renderStockTakingSummary();
+                    stockScanInput.focus();
+                });
+
+                const blInput = document.getElementById('stock_bl_prefix');
+                const qtyInput = document.getElementById('stock_target_qty');
+                if (blInput) blInput.addEventListener('input', renderStockTakingSummary);
+                if (qtyInput) qtyInput.addEventListener('input', renderStockTakingSummary);
             }
         });
     </script>
@@ -3378,6 +3739,9 @@ def verify_and_get_client(odoo_url, db_name, email, api_key):
 
 def get_filtered_documents(models, uid, api_key, db_name, mode):
     """Retrieve purchase orders or sales orders with open pickings"""
+    if mode == 'stocktaking':
+        return []
+
     current_timestamp = time.time()
     cache_key = _cache_key(db_name, mode=mode)
     if (cache_key in GLOBAL_PERFORMANCE_CACHE['documents'] and
@@ -3392,14 +3756,26 @@ def get_filtered_documents(models, uid, api_key, db_name, mode):
         )
         po_ids = list(set([p['purchase_id'][0] for p in open_pickings if p.get('purchase_id')]))
         if not po_ids:
-            GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = []
+            # Fallback: keep dropdown usable even when incoming pickings don't carry purchase_id links.
+            data = models.execute_kw(
+                db_name, uid, api_key, 'purchase.order', 'search_read',
+                [[]],
+                {'fields': ['id', 'name', 'partner_id'], 'order': 'id desc', 'limit': 40}
+            )
+            GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = data
             GLOBAL_PERFORMANCE_CACHE['documents_expiry'][cache_key] = current_timestamp + DOC_CACHE_TTL
-            return []
+            return data
         data = models.execute_kw(
             db_name, uid, api_key, 'purchase.order', 'search_read',
             [[['id', 'in', po_ids]]],
             {'fields': ['id', 'name', 'partner_id'], 'order': 'name desc', 'limit': 40}
         )
+        if not data:
+            data = models.execute_kw(
+                db_name, uid, api_key, 'purchase.order', 'search_read',
+                [[]],
+                {'fields': ['id', 'name', 'partner_id'], 'order': 'id desc', 'limit': 40}
+            )
         GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = data
         GLOBAL_PERFORMANCE_CACHE['documents_expiry'][cache_key] = current_timestamp + DOC_CACHE_TTL
         return data
@@ -3411,14 +3787,26 @@ def get_filtered_documents(models, uid, api_key, db_name, mode):
         )
         so_ids = list(set([p['sale_id'][0] for p in open_pickings if p.get('sale_id')]))
         if not so_ids:
-            GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = []
+            # Fallback: keep dropdown usable even when outgoing pickings don't carry sale_id links.
+            data = models.execute_kw(
+                db_name, uid, api_key, 'sale.order', 'search_read',
+                [[]],
+                {'fields': ['id', 'name', 'partner_id'], 'order': 'id desc', 'limit': 40}
+            )
+            GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = data
             GLOBAL_PERFORMANCE_CACHE['documents_expiry'][cache_key] = current_timestamp + DOC_CACHE_TTL
-            return []
+            return data
         data = models.execute_kw(
             db_name, uid, api_key, 'sale.order', 'search_read',
             [[['id', 'in', so_ids]]],
             {'fields': ['id', 'name', 'partner_id'], 'order': 'name desc', 'limit': 40}
         )
+        if not data:
+            data = models.execute_kw(
+                db_name, uid, api_key, 'sale.order', 'search_read',
+                [[]],
+                {'fields': ['id', 'name', 'partner_id'], 'order': 'id desc', 'limit': 40}
+            )
         GLOBAL_PERFORMANCE_CACHE['documents'][cache_key] = data
         GLOBAL_PERFORMANCE_CACHE['documents_expiry'][cache_key] = current_timestamp + DOC_CACHE_TTL
         return data
@@ -3759,6 +4147,12 @@ def app_icon_512_png():
     return Response(payload, mimetype='image/png')
 
 
+@app.route('/favicon.ico')
+def favicon():
+    payload = _build_png_image(64, 64, 'VTHC')
+    return Response(payload, mimetype='image/png')
+
+
 @app.route('/pwa-screenshot-portrait.png')
 def pwa_screenshot_portrait():
     payload = _build_png_image(1080, 1920, 'VTHC Middleware', 'RFID workflow for Odoo inventory operations')
@@ -3778,6 +4172,20 @@ def dashboard():
     
     if 'mode' not in session:
         session['mode'] = 'purchase'
+
+    if session['mode'] == 'stocktaking':
+        return render_template_string(
+            HTML_TEMPLATE,
+            documents=[],
+            current_mode='stocktaking',
+            locations=[],
+            partners=[],
+            selected_doc=None,
+            products=[],
+            selected_owner_id=None,
+            message=None,
+            msg_type=None
+        )
 
     models, uid = verify_and_get_client(
         session['odoo_url'], session['db_name'], session['user_email'], session['api_key']
@@ -3841,7 +4249,10 @@ def get_stock():
 @app.route('/switch-mode/<target_mode>')
 def switch_mode(target_mode):
     """Switch between purchase (IN) and delivery (OUT) modes"""
+    if target_mode not in {'purchase', 'delivery', 'stocktaking'}:
+        target_mode = 'purchase'
     session['mode'] = target_mode
+    invalidate_runtime_cache()
     return redirect(url_for('dashboard'))
 
 
@@ -3860,6 +4271,7 @@ def login():
         session['user_email'] = email
         session['api_key'] = api_key
         session['mode'] = 'purchase'
+        invalidate_runtime_cache()
         return redirect(url_for('dashboard'))
     
     return render_template_string(HTML_TEMPLATE, documents=[], message='Connection Failed!', msg_type='danger')
